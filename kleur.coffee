@@ -4,7 +4,7 @@
       settings = 
         initialColor: '#ff0000'
         changeCallback: null
-      settings = $.extend settings, options  
+      settings = $.extend settings, opts  
       log = (msg) ->
         console?.log msg
       
@@ -89,7 +89,7 @@
       
       return @each () ->
         picker = $(@)
-        color = @settings.initialColor.replace("#", "")
+        color = settings.initialColor.replace("#", "")
         adjuster = picker.find(".color-adjuster")
         hexField = picker.find(".kleur-hex")
         hueInput = picker.find(".kleur-hue")
@@ -99,9 +99,9 @@
 
         init = ->
           hsl = hexToHSL(color)
-          updateColorInput(color)
-          updateHueSlider(hsl.hue)
-          updateGradientBox( hslToHex(hsl.hue, 100, 50) )
+          hexField.val(color)
+          hueInput.val(hsl.hue)
+          updateGradientBox( HSLToHex(hsl.hue, 100, 50) )
           updateColorPreview(color)
           setPinPositionForColor(hsl)
         
@@ -130,7 +130,7 @@
         setColorsForPinPosition = ->
           hsl = getHSL(hueInput.val())
           hex = HSLToHex(hsl.hue, hsl.saturation, hsl.lightness)
-          updateColorInput hex
+          hexField.val(hex)
           updateColorPreview hex
           return
         
@@ -152,12 +152,12 @@
           y = event.clientY - offset.top
           
           # Account for pin being dragged outside the spectrum area
-          if x < (pinWidth)
+          if x <= ( -(pinWidth / 2) )
             x = 0
-          else x = width  if x >= width
-          if y < (pinHeight)
+          else x = width  if x >= width + ( pinWidth / 2 )
+          if y < (pinHeight / 2)
             y = 0
-          else y = height  if y >= height
+          else y = height  if y >= height + ( pinHeight / 2 )
           # Place the pin
           pin.css
             left: x / width * 100 + "%"
@@ -169,7 +169,7 @@
           return  
         
         ### Events ###
-        colorInput.on "change", ->
+        hexField.on "change", ->
           HSL = {}
           hex = undefined
           if /([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/g.test($(@).val())
@@ -188,7 +188,7 @@
           picker.trigger("kleur.change")
           return  
         
-        colorInput.on "paste", ->
+        hexField.on "paste", ->
           setTimeout (=>
             $(@).val($(@).val().replace("#", "")).trigger("change")
           ), 10
@@ -220,7 +220,7 @@
         spectrum.on "touchmove touchstart", movePin
 
         #Stop propagation on interactive els
-        colorInput.on "click focus", (e) ->
+        hexField.on "click focus", (e) ->
           e.stopPropagation()
           return
 
@@ -234,8 +234,8 @@
 
         picker.on('kleur.change', ->
           $(@).data('color', hexField.val())
-          if @settings.changeCallback and typeof @settings.changeCallback is "function"
-            @settings.changeCallback.call()
+          if settings.changeCallback and typeof settings.changeCallback is "function"
+            settings.changeCallback.call()
         )
 
         ### Public Methods ###

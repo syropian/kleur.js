@@ -6,7 +6,7 @@
         initialColor: '#ff0000',
         changeCallback: null
       };
-      settings = $.extend(settings, options);
+      settings = $.extend(settings, opts);
       log = function(msg) {
         return typeof console !== "undefined" && console !== null ? console.log(msg) : void 0;
       };
@@ -121,7 +121,7 @@
       return this.each(function() {
         var adjuster, color, getHSL, hex, hexField, hsl, hueInput, init, movePin, picker, pin, preview, rgb, setColorsForPinPosition, setPinPositionForColor, spectrum, updateColorPreview, updateGradientBox;
         picker = $(this);
-        color = this.settings.initialColor.replace("#", "");
+        color = settings.initialColor.replace("#", "");
         adjuster = picker.find(".color-adjuster");
         hexField = picker.find(".kleur-hex");
         hueInput = picker.find(".kleur-hue");
@@ -131,9 +131,9 @@
         init = function() {
           var hsl;
           hsl = hexToHSL(color);
-          updateColorInput(color);
-          updateHueSlider(hsl.hue);
-          updateGradientBox(hslToHex(hsl.hue, 100, 50));
+          hexField.val(color);
+          hueInput.val(hsl.hue);
+          updateGradientBox(HSLToHex(hsl.hue, 100, 50));
           updateColorPreview(color);
           return setPinPositionForColor(hsl);
         };
@@ -171,7 +171,7 @@
           var hex, hsl;
           hsl = getHSL(hueInput.val());
           hex = HSLToHex(hsl.hue, hsl.saturation, hsl.lightness);
-          updateColorInput(hex);
+          hexField.val(hex);
           updateColorPreview(hex);
         };
         setPinPositionForColor = function(hsl) {
@@ -192,17 +192,17 @@
           pinHeight = pin.height();
           x = event.clientX - offset.left;
           y = event.clientY - offset.top;
-          if (x < pinWidth) {
+          if (x <= (-(pinWidth / 2))) {
             x = 0;
           } else {
-            if (x >= width) {
+            if (x >= width + (pinWidth / 2)) {
               x = width;
             }
           }
-          if (y < pinHeight) {
+          if (y < (pinHeight / 2)) {
             y = 0;
           } else {
-            if (y >= height) {
+            if (y >= height + (pinHeight / 2)) {
               y = height;
             }
           }
@@ -215,7 +215,7 @@
         };
 
         /* Events */
-        colorInput.on("change", function() {
+        hexField.on("change", function() {
           var HSL, hex;
           HSL = {};
           hex = void 0;
@@ -233,7 +233,7 @@
           updateColorPreview(hex);
           picker.trigger("kleur.change");
         });
-        colorInput.on("paste", function() {
+        hexField.on("paste", function() {
           setTimeout(((function(_this) {
             return function() {
               return $(_this).val($(_this).val().replace("#", "")).trigger("change");
@@ -262,7 +262,7 @@
           $(document).off("mousemove", movePin);
         });
         spectrum.on("touchmove touchstart", movePin);
-        colorInput.on("click focus", function(e) {
+        hexField.on("click focus", function(e) {
           e.stopPropagation();
         });
         spectrum.on("touchmove touchstart click", function(e) {
@@ -273,8 +273,8 @@
         });
         picker.on('kleur.change', function() {
           $(this).data('color', hexField.val());
-          if (this.settings.changeCallback && typeof this.settings.changeCallback === "function") {
-            return this.settings.changeCallback.call();
+          if (settings.changeCallback && typeof settings.changeCallback === "function") {
+            return settings.changeCallback.call();
           }
         });
 

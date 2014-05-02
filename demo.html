@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>kleur.js</title>
+  <link rel="stylesheet" href="dist/kleur.css">
+</head>
+<body>
+<div class="colorpicker">
+  <div class="color-preview"></div>
+  <div class="color-hex-editor">
+    <input type="text" class="kleur-hex" maxlength="7">
+  </div>
+  <div class="color-adjuster">
+    <div class="kleur-spectrum">
+      <div class="spectrum-bg"></div>
+      <div class="spectrum-inner">
+        <div class="kleur-spectrum-pin"></div>
+      </div>
+      <div class="spectrum-overlay"></div>
+    </div>
+    <input type="range" min="0" max="360" class="kleur-hue">
+  </div>
+</div>  
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script defer src="dist/kleur.js"></script>
+<script>
+  $(document).ready(function(){
+    $('.colorpicker').kleur();
+  });
+</script>
+</body>
+</html>
