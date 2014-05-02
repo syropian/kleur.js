@@ -146,7 +146,7 @@
             hue = 0;
           }
           lightness = (50 * (1 - (pinLeft / 100)) + 50) * (1 - (pinTop / 100));
-          saturation = pinLeft * 100;
+          saturation = pinLeft;
           hue = Math.round(clamp(hue, 0, 360));
           saturation = Math.round(clamp(saturation, 0, 100));
           lightness = Math.round(clamp(lightness, 0, 100));
@@ -155,6 +155,7 @@
             saturation: saturation,
             lightness: lightness
           };
+          window.hsl = hsl;
           return hsl;
         };
         updateColorPreview = function(hex) {

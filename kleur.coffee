@@ -111,7 +111,7 @@
           hue = parseInt(h, 10)
           hue = 0  if hue is 360
           lightness = (50 * ( 1 - (pinLeft / 100) ) + 50) * ( 1 - (pinTop / 100) )
-          saturation = pinLeft * 100
+          saturation = pinLeft
           hue = Math.round(clamp(hue, 0, 360))
           saturation = Math.round(clamp(saturation, 0, 100))
           lightness = Math.round(clamp(lightness, 0, 100))
@@ -119,6 +119,7 @@
             hue: hue
             saturation: saturation
             lightness: lightness
+          window.hsl = hsl  
           hsl
         
         updateColorPreview = (hex) ->
