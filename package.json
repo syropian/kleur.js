@@ -1,0 +1,11 @@
+{
+  "name": "kleur.js",
+  "version": "0.1.0",
+  "repository": "https://github.com/syropian/kleur.js",
+  "devDependencies": {
+    "node-bourbon": "~1.0.0",
+    "gulp": "~3.5.2",
+    "gulp-coffee": "~1.4.1",
+    "gulp-ruby-sass": "~0.3.1"
+  }
+}
