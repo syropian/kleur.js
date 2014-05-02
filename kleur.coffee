@@ -89,7 +89,7 @@
       
       return @each () ->
         picker = $(@)
-        color = initialColor.replace("#", "")
+        color = @settings.initialColor.replace("#", "")
         adjuster = picker.find(".color-adjuster")
         hexField = picker.find(".kleur-hex")
         hueInput = picker.find(".kleur-hue")

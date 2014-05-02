@@ -121,7 +121,7 @@
       return this.each(function() {
         var adjuster, color, getHSL, hex, hexField, hsl, hueInput, init, movePin, picker, pin, preview, rgb, setColorsForPinPosition, setPinPositionForColor, spectrum, updateColorPreview, updateGradientBox;
         picker = $(this);
-        color = initialColor.replace("#", "");
+        color = this.settings.initialColor.replace("#", "");
         adjuster = picker.find(".color-adjuster");
         hexField = picker.find(".kleur-hex");
         hueInput = picker.find(".kleur-hue");
