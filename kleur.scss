@@ -38,14 +38,8 @@
   position: absolute;
   cursor: move;
 }
-/* Customization: Default skin */
-// {
-//   padding: 0 11px;
-//   border-radius: 0;
-//   width: 322px;
-//   min-height: 42px;
-// }
-.color-preview {
+
+.kleur-preview {
   @include size( 23px );
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
   float: right;
@@ -74,7 +68,7 @@
 .kleur-hex:focus, .kleur-hex.focused {
   outline: none;
 }
-.color-adjuster {
+.kleur-adjuster {
   clear: right;
   overflow: hidden;
   position: relative;

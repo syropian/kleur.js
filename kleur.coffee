@@ -1,13 +1,14 @@
+## kleur.js - A simple, flexible colorpicker based on Purty Picker
 ( ($) ->
   $.fn.extend
     kleur: (opts) ->
-      settings = 
+      settings =
         initialColor: '#ff0000'
-        changeCallback: null
-      settings = $.extend settings, opts  
+        changeCallback: (color) -> undefined
+      settings = $.extend settings, opts
       log = (msg) ->
         console?.log msg
-      
+
       HSLToRGB = (h, s, l) ->
         h /= 360
         s /= 100
@@ -33,8 +34,8 @@
           b = hueToRGB(p, q, h - 1 / 3)
         red: Math.round(r * 255)
         green: Math.round(g * 255)
-        blue: Math.round(b * 255)  
-      
+        blue: Math.round(b * 255)
+
       RGBToHSL = (r, g, b) ->
         r /= 255
         g /= 255
@@ -60,11 +61,11 @@
           h /= 6
         hue: Math.round(h * 360)
         saturation: Math.round(s * 100)
-        luminosity: Math.round(l * 100)  
-      
+        luminosity: Math.round(l * 100)
+
       RGBToHex = (r, g, b) ->
-        ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice 1  
-      
+        ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice 1
+
       hexToRGB = (hex) ->
         bigInt = parseInt(hex, 16)
         r = (bigInt >> 16) & 255
@@ -73,28 +74,57 @@
         red: r
         green: g
         blue: b
-      
+
       hexToHSL = (hex) ->
         RGB = hexToRGB(hex)
         RGBToHSL RGB.red, RGB.green, RGB.blue
-      
+
       HSLToHex = (h, s, l) ->
         RGB = HSLToRGB(h, s, l)
         RGBToHex RGB.red, RGB.green, RGB.blue
-      
+
+      RGBtoHSV = (r,g,b) ->
+        r = r / 255
+        g = g / 255
+        b = b / 255
+
+        max = Math.max(r, g, b)
+        min = Math.min(r, g, b)
+        h = undefined
+        s = undefined
+        v = max
+        d = max - min
+        s = (if max is 0 then 0 else d / max)
+        if max is min
+          h = 0 # achromatic
+        else
+          switch max
+            when r
+              h = (g - b) / d + ((if g < b then 6 else 0))
+            when g
+              h = (b - r) / d + 2
+            when b
+              h = (r - g) / d + 4
+          h /= 6
+        hsv =
+          hue: h
+          saturation: s
+          value: v
+
+
       clamp = (num, min, max) ->
         num = max  if num > max
         num = min  if num < min
-        num  
-      
+        num
+
       return @each () ->
         picker = $(@)
         color = settings.initialColor.replace("#", "")
-        adjuster = picker.find(".color-adjuster")
+        adjuster = picker.find(".kleur-adjuster")
         hexField = picker.find(".kleur-hex")
         hueInput = picker.find(".kleur-hue")
         pin = picker.find(".kleur-spectrum-pin")
-        preview = picker.find(".color-preview")
+        preview = picker.find(".kleur-preview")
         spectrum = picker.find(".kleur-spectrum")
 
         init = ->
@@ -104,43 +134,41 @@
           updateGradientBox( HSLToHex(hsl.hue, 100, 50) )
           updateColorPreview(color)
           setPinPositionForColor(hsl)
-        
-        getHSL = (h) ->
-          pinTop = parseFloat(pin[0].style.top)
-          pinLeft = parseFloat(pin[0].style.left)
+
+        getHSL = (h, x, y) ->
           hue = parseInt(h, 10)
           hue = 0  if hue is 360
-          lightness = (50 * ( 1 - (pinLeft / 100) ) + 50) * ( 1 - (pinTop / 100) )
-          saturation = pinLeft
-          hue = Math.round(clamp(hue, 0, 360))
-          saturation = Math.round(clamp(saturation, 0, 100))
-          lightness = Math.round(clamp(lightness, 0, 100))
+          hsv_value = 1 - (y / 100)
+          hsv_saturation = x / 100
+          lightness = (hsv_value / 2) * (2 - hsv_saturation)
+          saturation = (hsv_value * hsv_saturation) / (1 - Math.abs(2 * lightness - 1))
+          if isNaN(saturation)
+            saturation = hsv_saturation
           hsl =
             hue: hue
-            saturation: saturation
-            lightness: lightness
-          window.hsl = hsl  
-          hsl
-        
+            saturation: clamp(saturation * 100, 0, 100)
+            lightness: clamp(lightness * 100, 0, 100)
+
+
         updateColorPreview = (hex) ->
           preview.css("background-color": "#" + hex)
-        
+
         updateGradientBox = (hex) ->
           spectrum.children('.spectrum-bg').css("background-color": "#" + hex)
-        
+
         setColorsForPinPosition = ->
-          hsl = getHSL(hueInput.val())
+          hsl = getHSL(hueInput.val(), parseFloat(pin[0].style.left), parseFloat(pin[0].style.top))
           hex = HSLToHex(hsl.hue, hsl.saturation, hsl.lightness)
           hexField.val(hex)
           updateColorPreview hex
           return
-        
+
         setPinPositionForColor = (hsl) ->
-          lightness = (50 * (1 - (hsl.saturation / 100)) + 50) * (1 - (hsl.luminosity / 100))
-          lightness = clamp(lightness, 0, 100)
+          rgb = HSLToRGB(hsl.hue, hsl.saturation,hsl.luminosity)
+          hsv = RGBtoHSV(rgb.red, rgb.green, rgb.blue)
           pin.css
-            left: hsl.saturation + "%"
-            top: lightness + "%"
+            left: (hsv.saturation * 100) + "%"
+            top: ( 100 - (hsv.value * 100) ) + "%"
           return
 
         movePin = (event) ->
@@ -151,7 +179,7 @@
           pinHeight = pin.height()
           x = event.clientX - offset.left
           y = event.clientY - offset.top
-          
+
           # Account for pin being dragged outside the spectrum area
           if x <= ( -(pinWidth / 2) )
             x = 0
@@ -167,9 +195,17 @@
           # Output new color value
           setColorsForPinPosition()
           picker.trigger("kleur.change")
-          return  
-        
+          return
+
         ### Events ###
+        hexField.on "keyup", ->
+          hex = $(@).val()
+          if hex.length > 6
+            if hex[0] == '#'
+              $(@).val(hex.substring(0,7))
+            else
+              $(@).val(hex.substring(0,6))
+
         hexField.on "change", ->
           HSL = {}
           hex = undefined
@@ -181,30 +217,30 @@
             $(@).val hex
             HSL = hexToHSL(hex)
           setPinPositionForColor(HSL)
-          
+
           #Update hue
           hueInput.val(HSL.hue)
           updateGradientBox( HSLToHex(HSL.hue, 100, 50) )
           updateColorPreview(hex)
           picker.trigger("kleur.change")
-          return  
-        
+          return
+
         hexField.on "paste", ->
           setTimeout (=>
             $(@).val($(@).val().replace("#", "")).trigger("change")
           ), 10
           return
-        
+
         hueInput.on "change", ->
           hueVal = $(@).val()
-          hsl = getHSL(hueVal)
+          hsl = getHSL(hueVal, parseFloat(pin[0].style.left), parseFloat(pin[0].style.top))
           hex = HSLToHex(hsl.hue, hsl.saturation, hsl.lightness)
           hexBright = HSLToHex(hsl.hue, 100, 50) # We want the spectrum color to have the chosen hue, but with saturation and luminosity on full
           hexField.val(hex)
           updateColorPreview(hex)
           updateGradientBox(hexBright)
           picker.trigger("kleur.change")
-          return  
+          return
 
         spectrum.on "mousedown", (event) ->
           event.preventDefault()
@@ -234,9 +270,9 @@
           return
 
         picker.on('kleur.change', ->
-          $(@).data('color', hexField.val())
+          $(@).data('color', "#" + hexField.val())
           if settings.changeCallback and typeof settings.changeCallback is "function"
-            settings.changeCallback.call()
+            settings.changeCallback( "#" + hexField.val().slice(0,6) )
         )
 
         ### Public Methods ###
@@ -248,7 +284,8 @@
         rgb = ->
           rgb = hexToRGB( picker.data('color') )
           return "rgb(#{rgb.red},#{rgb.green},#{rgb.blue})"
-        
+
         ### Fire it up ###
-        init() 
+        init()
+
 ) jQuery

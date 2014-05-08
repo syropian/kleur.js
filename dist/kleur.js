@@ -1,10 +1,12 @@
 (function($) {
   return $.fn.extend({
     kleur: function(opts) {
-      var HSLToHex, HSLToRGB, RGBToHSL, RGBToHex, clamp, hexToHSL, hexToRGB, log, settings;
+      var HSLToHex, HSLToRGB, RGBToHSL, RGBToHex, RGBtoHSV, clamp, hexToHSL, hexToRGB, log, settings;
       settings = {
         initialColor: '#ff0000',
-        changeCallback: null
+        changeCallback: function(color) {
+          return void 0;
+        }
       };
       settings = $.extend(settings, opts);
       log = function(msg) {
@@ -109,6 +111,39 @@
         RGB = HSLToRGB(h, s, l);
         return RGBToHex(RGB.red, RGB.green, RGB.blue);
       };
+      RGBtoHSV = function(r, g, b) {
+        var d, h, hsv, max, min, s, v;
+        r = r / 255;
+        g = g / 255;
+        b = b / 255;
+        max = Math.max(r, g, b);
+        min = Math.min(r, g, b);
+        h = void 0;
+        s = void 0;
+        v = max;
+        d = max - min;
+        s = (max === 0 ? 0 : d / max);
+        if (max === min) {
+          h = 0;
+        } else {
+          switch (max) {
+            case r:
+              h = (g - b) / d + (g < b ? 6 : 0);
+              break;
+            case g:
+              h = (b - r) / d + 2;
+              break;
+            case b:
+              h = (r - g) / d + 4;
+          }
+          h /= 6;
+        }
+        return hsv = {
+          hue: h,
+          saturation: s,
+          value: v
+        };
+      };
       clamp = function(num, min, max) {
         if (num > max) {
           num = max;
@@ -122,11 +157,11 @@
         var adjuster, color, getHSL, hex, hexField, hsl, hueInput, init, movePin, picker, pin, preview, rgb, setColorsForPinPosition, setPinPositionForColor, spectrum, updateColorPreview, updateGradientBox;
         picker = $(this);
         color = settings.initialColor.replace("#", "");
-        adjuster = picker.find(".color-adjuster");
+        adjuster = picker.find(".kleur-adjuster");
         hexField = picker.find(".kleur-hex");
         hueInput = picker.find(".kleur-hue");
         pin = picker.find(".kleur-spectrum-pin");
-        preview = picker.find(".color-preview");
+        preview = picker.find(".kleur-preview");
         spectrum = picker.find(".kleur-spectrum");
         init = function() {
           var hsl;
@@ -137,26 +172,24 @@
           updateColorPreview(color);
           return setPinPositionForColor(hsl);
         };
-        getHSL = function(h) {
-          var hsl, hue, lightness, pinLeft, pinTop, saturation;
-          pinTop = parseFloat(pin[0].style.top);
-          pinLeft = parseFloat(pin[0].style.left);
+        getHSL = function(h, x, y) {
+          var hsl, hsv_saturation, hsv_value, hue, lightness, saturation;
           hue = parseInt(h, 10);
           if (hue === 360) {
             hue = 0;
           }
-          lightness = (50 * (1 - (pinLeft / 100)) + 50) * (1 - (pinTop / 100));
-          saturation = pinLeft;
-          hue = Math.round(clamp(hue, 0, 360));
-          saturation = Math.round(clamp(saturation, 0, 100));
-          lightness = Math.round(clamp(lightness, 0, 100));
-          hsl = {
+          hsv_value = 1 - (y / 100);
+          hsv_saturation = x / 100;
+          lightness = (hsv_value / 2) * (2 - hsv_saturation);
+          saturation = (hsv_value * hsv_saturation) / (1 - Math.abs(2 * lightness - 1));
+          if (isNaN(saturation)) {
+            saturation = hsv_saturation;
+          }
+          return hsl = {
             hue: hue,
-            saturation: saturation,
-            lightness: lightness
+            saturation: clamp(saturation * 100, 0, 100),
+            lightness: clamp(lightness * 100, 0, 100)
           };
-          window.hsl = hsl;
-          return hsl;
         };
         updateColorPreview = function(hex) {
           return preview.css({
@@ -170,18 +203,18 @@
         };
         setColorsForPinPosition = function() {
           var hex, hsl;
-          hsl = getHSL(hueInput.val());
+          hsl = getHSL(hueInput.val(), parseFloat(pin[0].style.left), parseFloat(pin[0].style.top));
           hex = HSLToHex(hsl.hue, hsl.saturation, hsl.lightness);
           hexField.val(hex);
           updateColorPreview(hex);
         };
         setPinPositionForColor = function(hsl) {
-          var lightness;
-          lightness = (50 * (1 - (hsl.saturation / 100)) + 50) * (1 - (hsl.luminosity / 100));
-          lightness = clamp(lightness, 0, 100);
+          var hsv, rgb;
+          rgb = HSLToRGB(hsl.hue, hsl.saturation, hsl.luminosity);
+          hsv = RGBtoHSV(rgb.red, rgb.green, rgb.blue);
           pin.css({
-            left: hsl.saturation + "%",
-            top: lightness + "%"
+            left: (hsv.saturation * 100) + "%",
+            top: (100 - (hsv.value * 100)) + "%"
           });
         };
         movePin = function(event) {
@@ -216,6 +249,17 @@
         };
 
         /* Events */
+        hexField.on("keyup", function() {
+          var hex;
+          hex = $(this).val();
+          if (hex.length > 6) {
+            if (hex[0] === '#') {
+              return $(this).val(hex.substring(0, 7));
+            } else {
+              return $(this).val(hex.substring(0, 6));
+            }
+          }
+        });
         hexField.on("change", function() {
           var HSL, hex;
           HSL = {};
@@ -244,7 +288,7 @@
         hueInput.on("change", function() {
           var hex, hexBright, hsl, hueVal;
           hueVal = $(this).val();
-          hsl = getHSL(hueVal);
+          hsl = getHSL(hueVal, parseFloat(pin[0].style.left), parseFloat(pin[0].style.top));
           hex = HSLToHex(hsl.hue, hsl.saturation, hsl.lightness);
           hexBright = HSLToHex(hsl.hue, 100, 50);
           hexField.val(hex);
@@ -273,9 +317,9 @@
           e.stopPropagation();
         });
         picker.on('kleur.change', function() {
-          $(this).data('color', hexField.val());
+          $(this).data('color', "#" + hexField.val());
           if (settings.changeCallback && typeof settings.changeCallback === "function") {
-            return settings.changeCallback.call();
+            return settings.changeCallback("#" + hexField.val().slice(0, 6));
           }
         });
 
