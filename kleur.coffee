@@ -4,7 +4,7 @@
     kleur: (opts) ->
       settings =
         initialColor: '#ff0000'
-        changeCallback: (color) -> undefined
+        onChange: (hex, rgb, hsl) -> undefined
       settings = $.extend settings, opts
       log = (msg) ->
         console?.log msg
@@ -150,6 +150,7 @@
             lightness: clamp(lightness * 100, 0, 100)
 
 
+
         updateColorPreview = (hex) ->
           preview.css("background-color": "#" + hex)
 
@@ -271,21 +272,18 @@
 
         picker.on('kleur.change', ->
           $(@).data('color', "#" + hexField.val())
-          if settings.changeCallback and typeof settings.changeCallback is "function"
-            settings.changeCallback( "#" + hexField.val().slice(0,6) )
+          if settings.onChange and typeof settings.onChange is "function"
+            hex = $(@).data('color')
+            rgb = hexToRGB( $(@).data('color').slice 1 )
+            hsl = hexToHSL( $(@).data('color').slice 1 )
+            color =
+              hex: hex
+              rgb: "rgb(#{rgb.red},#{rgb.green},#{rgb.blue})"
+              hsl: "hsl(#{hsl.hue},#{hsl.saturation},#{hsl.luminosity})"
+            settings.onChange.apply(null, [color])
         )
 
-        ### Public Methods ###
-        hsl = ->
-          hsl = hexToHSL( picker.data('color') )
-          return "hsl(#{hsl.hue},#{hsl.saturation},#{hsl.luminosity})"
-        hex = ->
-          return "#" + picker.data('color')
-        rgb = ->
-          rgb = hexToRGB( picker.data('color') )
-          return "rgb(#{rgb.red},#{rgb.green},#{rgb.blue})"
 
-        ### Fire it up ###
         init()
 
 ) jQuery

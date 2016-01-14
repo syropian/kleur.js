@@ -4,7 +4,7 @@
       var HSLToHex, HSLToRGB, RGBToHSL, RGBToHex, RGBtoHSV, clamp, hexToHSL, hexToRGB, log, settings;
       settings = {
         initialColor: '#ff0000',
-        changeCallback: function(color) {
+        onChange: function(hex, rgb, hsl) {
           return void 0;
         }
       };
@@ -154,7 +154,7 @@
         return num;
       };
       return this.each(function() {
-        var adjuster, color, getHSL, hex, hexField, hsl, hueInput, init, movePin, picker, pin, preview, rgb, setColorsForPinPosition, setPinPositionForColor, spectrum, updateColorPreview, updateGradientBox;
+        var adjuster, color, getHSL, hexField, hueInput, init, movePin, picker, pin, preview, setColorsForPinPosition, setPinPositionForColor, spectrum, updateColorPreview, updateGradientBox;
         picker = $(this);
         color = settings.initialColor.replace("#", "");
         adjuster = picker.find(".kleur-adjuster");
@@ -317,26 +317,20 @@
           e.stopPropagation();
         });
         picker.on('kleur.change', function() {
+          var hex, hsl, rgb;
           $(this).data('color', "#" + hexField.val());
-          if (settings.changeCallback && typeof settings.changeCallback === "function") {
-            return settings.changeCallback("#" + hexField.val().slice(0, 6));
+          if (settings.onChange && typeof settings.onChange === "function") {
+            hex = $(this).data('color');
+            rgb = hexToRGB($(this).data('color').slice(1));
+            hsl = hexToHSL($(this).data('color').slice(1));
+            color = {
+              hex: hex,
+              rgb: "rgb(" + rgb.red + "," + rgb.green + "," + rgb.blue + ")",
+              hsl: "hsl(" + hsl.hue + "," + hsl.saturation + "," + hsl.luminosity + ")"
+            };
+            return settings.onChange.apply(null, [color]);
           }
         });
-
-        /* Public Methods */
-        hsl = function() {
-          hsl = hexToHSL(picker.data('color'));
-          return "hsl(" + hsl.hue + "," + hsl.saturation + "," + hsl.luminosity + ")";
-        };
-        hex = function() {
-          return "#" + picker.data('color');
-        };
-        rgb = function() {
-          rgb = hexToRGB(picker.data('color'));
-          return "rgb(" + rgb.red + "," + rgb.green + "," + rgb.blue + ")";
-        };
-
-        /* Fire it up */
         return init();
       });
     }
